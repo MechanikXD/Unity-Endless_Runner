@@ -6,11 +6,12 @@ using UnityEngine.InputSystem;
 namespace Player {
     [RequireComponent(typeof(PlayerInput))]
     public class PlayerController : MonoBehaviour {
+        [SerializeField] private int _maxHealth;
+        private int _currentHealth;
         [SerializeField] private Transform _leftPosition;
         [SerializeField] private Transform _middlePosition;
         [SerializeField] private Transform _rightPosition;
         private int _lastPlatformPositions;
-        
         // Target values
         private Vector3 _targetPosition;
         private Vector3 _targetScale = Vector3.one;
@@ -18,26 +19,37 @@ namespace Player {
         private bool _isMoving;
         private bool _isScaling;
         private bool _isJumpingOrCrouching;
-
+        // Original value to revert to after jump or crouch
         private float _originalHeight;
-
-        private const float CalcError = 0.0001f;
-
+        // Float error
+        private const float CalcError = 0.001f;
+        [Header("Movement and Jump")]
         [SerializeField] private float _moveSpeed;
         [SerializeField] private float _jumpDuration;
         [SerializeField] private float _jumpElevation;
         private bool _canJump = true;
+        [Header("Crouch")]
         [SerializeField] private float _crouchDuration;
         [SerializeField] private float _scaleSpeed;
         [SerializeField] private Vector3 _crouchScale;
         private bool _canCrouch = true;
+        // Some event to throw
+        public static event Action Damaged;
+        public static event Action Defeated;
+        public static event Action LineChanged;
+        public static event Action Jumped;
+        public static event Action Crouched;
+        public static event Action BecomeGrounded;
 
+        #region Movement
+        
         private void Awake() {
             // Start at middle platform.
             var middle = _middlePosition.localPosition;
             SetDesiredHeight(middle.y, true);
             SetDesiredPosition(middle, true);
             _originalHeight = transform.position.y;
+            _currentHealth = _maxHealth;
         }
 
         private void Update() {
@@ -104,6 +116,7 @@ namespace Player {
         private void Jump() {
             if (_isJumpingOrCrouching || !_canJump) return;
             
+            Jumped?.Invoke();
             SetDesiredHeight(_originalHeight + _jumpElevation);
             _isJumpingOrCrouching = true;
             _canJump = false;
@@ -114,14 +127,16 @@ namespace Player {
                 _isJumpingOrCrouching = false;
                 yield return new WaitUntil(AtOriginalHeight);
                 _canJump = true;
+                BecomeGrounded?.Invoke();
             }
 
             StartCoroutine(SetOriginalHeightLater());
         }
 
-        private void TryCrouch() {
+        private void Crouch() {
             if (_isJumpingOrCrouching || !_canCrouch) return;
             
+            Crouched?.Invoke();
             SetDesiredHeight(_crouchScale.y / 2);
             SetDesiredScale(_crouchScale);
             _isJumpingOrCrouching = true;
@@ -140,6 +155,8 @@ namespace Player {
         }
 
         private bool AtOriginalHeight() => Math.Abs(transform.position.y - _originalHeight) < 0.01f;
+        
+        #endregion
 
         #region Input System Events
 
@@ -155,15 +172,16 @@ namespace Player {
                     break;
                 case -1:
                     // Already there
-                    break;
+                    return;
             }
+            LineChanged?.Invoke();
         }
 
         public void OnRight() {
             switch (_lastPlatformPositions) {
                 case 1:
                     // Already there
-                    break;
+                    return;
                 case 0:
                     SetDesiredPosition(_rightPosition.localPosition);
                     _lastPlatformPositions = 1;
@@ -173,12 +191,24 @@ namespace Player {
                     _lastPlatformPositions = 0;
                     break;
             }
+            LineChanged?.Invoke();
         }
 
         public void OnUp() => Jump();
 
-        public void OnDown() => TryCrouch();
+        public void OnDown() => Crouch();
 
         #endregion
+
+        public void TakeDamage() {
+            _currentHealth -= 1;
+            if (_currentHealth <= 0) {
+                enabled = false;    // disable this script/controller
+                Defeated?.Invoke();
+            }
+            else {
+                Damaged?.Invoke();
+            }
+        }
     }
 }
