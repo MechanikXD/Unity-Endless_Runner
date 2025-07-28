@@ -1,18 +1,53 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using Obstacles;
+using UnityEngine;
 
 namespace Core.LevelGeneration {
     public class Platform : MonoBehaviour {
         [SerializeField] private float _platformLength;
-        // [SerializeField] private Transform[] _obstacleSpawnPoints;
-        // [SerializeField] private Obstacle[] _obstaclePool;
+        [SerializeField] private Transform[] _obstacleSpawnPoints;
+        [SerializeField] private ObstacleBase[] _obstaclePool;
+        private List<ObstacleBase> _createdObstacles = new List<ObstacleBase>();
+
+        [SerializeField] private float _obstacleSpawnChance;
+        [SerializeField] private float _secondObstacleChance;
         public float Length => _platformLength;
         public Vector3 Position => transform.position;
 
         public Platform InstantiateNew(Vector3 pos, Transform parent) {
             return Instantiate(gameObject, pos, Quaternion.identity, parent).GetComponent<Platform>();
         }
-        public void ClearObject() {}
-        public void PlaceRandomObject() {}
+
+        public void ClearObject() {
+            foreach (var obstacle in _createdObstacles) {
+                if (obstacle != null) Destroy(obstacle.gameObject);
+            }
+            _createdObstacles.Clear();
+        }
+
+        public void PlaceRandomObject() {
+            if (Random.value < _obstacleSpawnChance) {
+                var firstIndex = Random.Range(0, _obstacleSpawnPoints.Length);
+                var randomPoint = _obstacleSpawnPoints[firstIndex];
+                var randomObstacle = _obstaclePool[Random.Range(0, _obstaclePool.Length)];
+
+                var position = new Vector3(0, randomObstacle.Height / 2f + randomPoint.position.y, 0);
+                _createdObstacles.Add(randomObstacle.InstantiateNew(position, randomPoint));
+
+                if (Random.value < _secondObstacleChance) {
+                    var secondIndex = Random.Range(0, _obstacleSpawnPoints.Length);
+                    if (firstIndex == secondIndex) {
+                        secondIndex = secondIndex + 1 == _obstacleSpawnPoints.Length ? 0 : secondIndex + 1;
+                    }
+                    
+                    var otherPoint = _obstacleSpawnPoints[secondIndex];
+                    var otherObstacle = _obstaclePool[Random.Range(0, _obstaclePool.Length)];
+
+                    var otherPosition = new Vector3(0, otherObstacle.Height / 2f + otherPoint.position.y, 0);
+                    _createdObstacles.Add(otherObstacle.InstantiateNew(otherPosition, otherPoint));
+                }
+            }
+        }
 
         public void MoveTo(Vector3 position) {
             transform.localPosition = position;

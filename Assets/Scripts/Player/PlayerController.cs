@@ -218,6 +218,8 @@ namespace Player {
                     yield return new WaitForSeconds(_iFramesDuration);
                     _inIFrames = false;
                 }
+
+                StartCoroutine(RemoveIFramesLater());
             }
         }
     }
