@@ -7,6 +7,8 @@ namespace Player {
     [RequireComponent(typeof(PlayerInput))]
     public class PlayerController : MonoBehaviour {
         [SerializeField] private int _maxHealth;
+        [SerializeField] private float _iFramesDuration;
+        private bool _inIFrames;
         private int _currentHealth;
         [SerializeField] private Transform _leftPosition;
         [SerializeField] private Transform _middlePosition;
@@ -201,6 +203,8 @@ namespace Player {
         #endregion
 
         public void TakeDamage() {
+            if (_inIFrames) return;
+            
             _currentHealth -= 1;
             if (_currentHealth <= 0) {
                 enabled = false;    // disable this script/controller
@@ -208,6 +212,14 @@ namespace Player {
             }
             else {
                 Damaged?.Invoke();
+                _inIFrames = true;
+
+                IEnumerator RemoveIFramesLater() {
+                    yield return new WaitForSeconds(_iFramesDuration);
+                    _inIFrames = false;
+                }
+
+                StartCoroutine(RemoveIFramesLater());
             }
         }
     }
