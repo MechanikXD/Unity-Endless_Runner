@@ -3,13 +3,10 @@ using UnityEngine;
 
 namespace Obstacles.Obstacles {
     public class StaticObstacle : ObstacleBase {
-        [SerializeField] private float _obstacleHeight;
-        public override float Height => _obstacleHeight;
-
         public override ObstacleBase InstantiateNew(Vector3 pos, Transform parent) {
-            var newObstacle = Instantiate(gameObject, pos, Quaternion.identity);
+            var newObstacle = Instantiate(this, pos, Quaternion.identity);
             newObstacle.transform.SetParent(parent, false);
-            return newObstacle.GetComponent<ObstacleBase>();
+            return newObstacle;
         }
 
         protected override void OnTriggerEnter(Collider other) {

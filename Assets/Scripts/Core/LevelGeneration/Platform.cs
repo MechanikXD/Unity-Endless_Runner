@@ -31,8 +31,7 @@ namespace Core.LevelGeneration {
                 var randomPoint = _obstacleSpawnPoints[firstIndex];
                 var randomObstacle = _obstaclePool[Random.Range(0, _obstaclePool.Length)];
 
-                var position = new Vector3(0, randomObstacle.Height / 2f + randomPoint.position.y, 0);
-                _createdObstacles.Add(randomObstacle.InstantiateNew(position, randomPoint));
+                _createdObstacles.Add(randomObstacle.InstantiateNew(Vector3.zero, randomPoint));
 
                 if (Random.value < _secondObstacleChance) {
                     var secondIndex = Random.Range(0, _obstacleSpawnPoints.Length);
@@ -43,8 +42,7 @@ namespace Core.LevelGeneration {
                     var otherPoint = _obstacleSpawnPoints[secondIndex];
                     var otherObstacle = _obstaclePool[Random.Range(0, _obstaclePool.Length)];
 
-                    var otherPosition = new Vector3(0, otherObstacle.Height / 2f + otherPoint.position.y, 0);
-                    _createdObstacles.Add(otherObstacle.InstantiateNew(otherPosition, otherPoint));
+                    _createdObstacles.Add(otherObstacle.InstantiateNew(Vector3.zero, otherPoint));
                 }
             }
         }
