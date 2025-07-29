@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -199,6 +200,8 @@ namespace Player {
         public void OnUp() => Jump();
 
         public void OnDown() => Crouch();
+
+        public void OnPause() => UIManager.ShowPauseMenu();
 
         #endregion
 
