@@ -1,35 +1,37 @@
 ﻿using System;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Core.Score {
     public static class ScoreManager {
-        private static int _currentScore;
-        private static int _bestScore;
-        private const string ScorePrefKey = "Score";
+        public static int CurrentScore { get; private set; }
+        public static int BestScore { get; private set; }
 
         private static Action _unsubscribeFromEvents;
 
+        public static event Action<int> ScoreChanged;
+
         public static void Initialize() {
-            _currentScore = 0;
+            CurrentScore = 0;
             LoadBestScore();
-            void SaveScoreOnSceneUnload(Scene arg) {
-                SaveBestScore();
-                SceneManager.sceneUnloaded -= SaveScoreOnSceneUnload;
-            }
-            SceneManager.sceneUnloaded += SaveScoreOnSceneUnload;
         }
 
         public static void AddScore(int value) {
-            if (value > 0) _currentScore += value;
+            if (value > 0) CurrentScore += value;
+            
+            ScoreChanged?.Invoke(CurrentScore);
         }
         
         private static void LoadBestScore() {
-            _bestScore = PlayerPrefs.HasKey(ScorePrefKey) ? PlayerPrefs.GetInt(ScorePrefKey) : 0;
+            BestScore = PlayerPrefs.HasKey("Score") ? PlayerPrefs.GetInt("Score") : 0;
         }
 
-        private static void SaveBestScore() {
-            if (_currentScore > _bestScore) PlayerPrefs.SetInt(ScorePrefKey, _currentScore);
+        public static void SaveBestScore() {
+            UpdateBestScore();
+            PlayerPrefs.SetInt("Score", CurrentScore > BestScore ? CurrentScore : BestScore);
+        }
+
+        public static void UpdateBestScore() {
+            if (CurrentScore > BestScore) BestScore = CurrentScore;
         }
     }
 }

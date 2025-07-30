@@ -1,14 +1,16 @@
-﻿using System.Linq;
-using Player;
-using UI.Views;
-#if UNITY_EDITOR
+﻿#if UNITY_EDITOR
 using UnityEditor;
 #endif
+using System.Linq;
+using Core.Score;
+using Player;
+using UI.Views;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace UI {
-    public class UIManager : MonoBehaviour { 
+    public class UIManager : MonoBehaviour {
+        private static PlayerHudView _playerHud;
         private static PauseMenuView _pauseMenu;
         private static GameOverView _gameOver;
         private static SettingsView _settingsView;
@@ -18,7 +20,10 @@ namespace UI {
             _ = sceneCanvases.First(canvas => canvas.TryGetComponent(out _pauseMenu));
             _ = sceneCanvases.First(canvas => canvas.TryGetComponent(out _gameOver));
             _ = sceneCanvases.First(canvas => canvas.TryGetComponent(out _settingsView));
+            _ = sceneCanvases.First(canvas => canvas.TryGetComponent(out _playerHud));
             
+            ScoreManager.Initialize();
+            _playerHud.SetNewScore(0);
             OnHideCanvas();
         }
 
@@ -39,6 +44,8 @@ namespace UI {
             PlayerController.Defeated += ShowGameOver;
 
             _settingsView.BackFromSettings += ReturnFromSettings;
+
+            ScoreManager.ScoreChanged += ChangeScoreInHud;
         }
 
         private void OnDisable() {
@@ -51,6 +58,12 @@ namespace UI {
             _gameOver.ExitPressed -= ExitApp;
             
             _settingsView.BackFromSettings -= ReturnFromSettings;
+            
+            ScoreManager.ScoreChanged -= ChangeScoreInHud;
+        }
+
+        private void ChangeScoreInHud(int newValue) {
+            _playerHud.SetNewScore(newValue);
         }
 
         private static void OnShowCanvas() {
@@ -80,8 +93,10 @@ namespace UI {
         }
 
         private static void ShowGameOver() {
-            // TODO: Display current and best scores
+            ScoreManager.UpdateBestScore();
+            _gameOver.SetScores(ScoreManager.CurrentScore, ScoreManager.BestScore);
             OnShowCanvas();
+            ScoreManager.SaveBestScore();
             _gameOver.ShowCanvas();
         }
 
