@@ -57,8 +57,9 @@ MonoBehaviour:
   - {fileID: 6911138678829110655, guid: a5b00cd4e0ab91246beddfeac9fdf26a, type: 3}
   - {fileID: 2311297939416806486, guid: 88a53749dcff36943a0e2b76bbb5e520, type: 3}
   - {fileID: 2648174181512660949, guid: ca351fef0674ed84f8fd7800b90d369e, type: 3}
-  _obstacleSpawnChance: 0.3
+  _obstacleSpawnChance: 0.6
   _secondObstacleChance: 0.3
+  _collectibleSpawnChance: 1
 --- !u!1 &1038020989576519706
 GameObject:
   m_ObjectHideFlags: 0
