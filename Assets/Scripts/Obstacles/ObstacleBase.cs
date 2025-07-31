@@ -2,7 +2,6 @@ using Obstacles.Collectible;
 using UnityEngine;
 
 namespace Obstacles {
-    [RequireComponent(typeof(Rigidbody))]
     public abstract class ObstacleBase : MonoBehaviour {
         public abstract bool CanSpawnCollectible { get; }
         
