@@ -10,12 +10,6 @@ namespace Obstacles.Obstacles {
 
         public override bool CanSpawnCollectible => _canHaveCollectible;
 
-        public override ObstacleBase InstantiateNew(Vector3 pos, Transform parent) {
-            var newObstacle = Instantiate(this, pos, Quaternion.identity);
-            newObstacle.transform.SetParent(parent, false);
-            return newObstacle;
-        }
-
         public override CollectibleBase SpawnCollectible(Transform parent) {
             if (_canHaveCollectible) {
                 return _collectiblePool[Random.Range(0, _collectiblePool.Length)]

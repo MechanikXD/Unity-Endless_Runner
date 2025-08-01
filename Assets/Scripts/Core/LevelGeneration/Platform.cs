@@ -1,14 +1,16 @@
 ﻿using System.Collections.Generic;
 using Obstacles;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 namespace Core.LevelGeneration {
     public class Platform : MonoBehaviour {
         [SerializeField] private float _platformLength;
         [SerializeField] private Transform[] _obstacleSpawnPoints;
-        [SerializeField] private ObstacleBase[] _obstaclePool;
-        private List<GameObject> _createdObstacles = new List<GameObject>();
+        [FormerlySerializedAs("_obstaclePool")]
+        [SerializeField] private ObstacleBase[] _possibleObstacles;  // Obstacles to generate from
+        private List<GameObject> _createdObstacles = new List<GameObject>();  // To store existing obstacles
 
         [SerializeField] private float _obstacleSpawnChance;
         [SerializeField] private float _secondObstacleChance;
@@ -16,17 +18,20 @@ namespace Core.LevelGeneration {
         public float Length => _platformLength;
         public Vector3 Position => transform.position;
 
-        public Platform InstantiateNew(Vector3 pos, Transform parent) {
-            return Instantiate(gameObject, pos, Quaternion.identity, parent).GetComponent<Platform>();
-        }
-
+        /// <summary>
+        /// Clears attached obstacles to this platform
+        /// </summary>
         public void ClearObject() {
             foreach (var obstacle in _createdObstacles) {
                 if (obstacle != null) Destroy(obstacle);
             }
             _createdObstacles.Clear();
         }
-
+        
+        /// <summary>
+        /// Creates array of shuffled indexes starting from 0.
+        /// </summary>
+        /// <param name="arraySize"> Amount of indexes or objects in a array </param>
         private static int[] ShuffleIndexes(int arraySize) {
             var array = new int[arraySize];
             for (var i = 0; i < arraySize; i++) {
@@ -42,6 +47,9 @@ namespace Core.LevelGeneration {
             return array;
         }
 
+        /// <summary>
+        /// Randomly places obstacles/collectibles on the platform 
+        /// </summary>
         public void PlaceRandomObject() {
             // Shuffle indexes instead of picking random, array must have more than 2 point.
             var indexes = ShuffleIndexes(_obstacleSpawnPoints.Length);
@@ -49,33 +57,33 @@ namespace Core.LevelGeneration {
             if (Random.value < _obstacleSpawnChance) {
                 // First Obstacle
                 var randomPoint = _obstacleSpawnPoints[indexes[0]];
-                var randomObstacle = _obstaclePool[Random.Range(0, _obstaclePool.Length)];
+                var randomObstacle = _possibleObstacles[Random.Range(0, _possibleObstacles.Length)];
 
                 if (Random.value < _collectibleSpawnChance && randomObstacle.CanSpawnCollectible) {
                     var randomCollectible = randomObstacle.SpawnCollectible(randomPoint);
                     _createdObstacles.Add(randomCollectible.gameObject);
                 }
 
-                _createdObstacles.Add(randomObstacle.InstantiateNew(Vector3.zero, randomPoint).gameObject);
+                _createdObstacles.Add(Instantiate(randomObstacle, Vector3.zero, Quaternion.identity,
+                    randomPoint).gameObject);
 
                 if (Random.value < _secondObstacleChance) {
                     // Second Obstacle
                     var otherPoint = _obstacleSpawnPoints[indexes[1]];
-                    var otherObstacle = _obstaclePool[Random.Range(0, _obstaclePool.Length)];
+                    var otherObstacle = _possibleObstacles[Random.Range(0, _possibleObstacles.Length)];
 
                     if (Random.value < _collectibleSpawnChance &&
                         otherObstacle.CanSpawnCollectible) {
                         var otherCollectible = otherObstacle.SpawnCollectible(otherPoint);
                         _createdObstacles.Add(otherCollectible.gameObject);
                     }
-                    
-                    _createdObstacles.Add(otherObstacle.InstantiateNew(Vector3.zero, otherPoint).gameObject);
+
+                    _createdObstacles.Add(Instantiate(otherObstacle, Vector3.zero,
+                        Quaternion.identity, otherPoint).gameObject);
                 }
             }
         }
 
-        public void MoveTo(Vector3 position) {
-            transform.localPosition = position;
-        }
+        public void MoveTo(Vector3 position) => transform.localPosition = position;
     }
 }

@@ -17,11 +17,15 @@ namespace Core.LevelGeneration {
         private void Awake() {
             _platformParent = new GameObject("Level").transform;
             _lastPlatformPosition = _levelOrigin.position;
+            _platformParentPosition = _platformParent.position;
             
             _platformPool = new Queue<Platform>(_platformCount);
             for (var _ = 0; _ < _platformCount; _++) {
                 var platformPosition = NextPlatformPosition();
-                _platformPool.Enqueue(_platformPrefab.InstantiateNew(platformPosition, _platformParent));
+                var newPlatform = Instantiate(_platformPrefab, platformPosition,
+                    Quaternion.identity, _platformParent);
+                
+                _platformPool.Enqueue(newPlatform);
                 _lastPlatformPosition = platformPosition;
             }
         }
