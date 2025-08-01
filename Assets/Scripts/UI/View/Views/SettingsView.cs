@@ -2,17 +2,14 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace UI.Views {
-    public class SettingsView : MonoBehaviour {
+namespace UI.View.Views {
+    public class SettingsView : ViewBase {
         [SerializeField] private Button _backButton;
-        private Canvas _thisCanvas;
         private Action _unsubscribeFromEvents;
 
         public event Action BackFromSettings;
-        
-        private void Awake() => _thisCanvas = GetComponent<Canvas>();
 
-        private void OnEnable() {
+        protected override void SubscribeToEvents() {
             void OnBackFromSettings() => BackFromSettings?.Invoke();
             
             _backButton.onClick.AddListener(OnBackFromSettings);
@@ -22,9 +19,6 @@ namespace UI.Views {
             };
         }
 
-        private void OnDisable() => _unsubscribeFromEvents();
-        
-        public void ShowCanvas() => _thisCanvas.enabled = true;
-        public void HideCanvas() => _thisCanvas.enabled = false;
+        protected override void UnsubscribeFromEvents() => _unsubscribeFromEvents();
     }
 }

@@ -2,13 +2,12 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace UI.Views {
-    public class PauseMenuView : MonoBehaviour {
+namespace UI.View.Views {
+    public class PauseMenuView : ViewBase {
         [SerializeField] private Button _resumeButton;
         [SerializeField] private Button _restartButton;
         [SerializeField] private Button _settingsButton;
         [SerializeField] private Button _exitButton;
-        private Canvas _thisCanvas;
         private Action _unsubscribeFromEvents;
 
         public event Action ResumePressed;
@@ -16,9 +15,7 @@ namespace UI.Views {
         public event Action SettingsPressed;
         public event Action ExitPressed;
 
-        private void Awake() => _thisCanvas = GetComponent<Canvas>();
-
-        private void OnEnable() {
+        protected override void SubscribeToEvents() {
             void OnResumePressed() => ResumePressed?.Invoke();
             void OnRestartPressed() => RestartPressed?.Invoke();
             void OnExitPressed() => ExitPressed?.Invoke();
@@ -37,9 +34,6 @@ namespace UI.Views {
             };
         }
 
-        private void OnDisable() => _unsubscribeFromEvents();
-
-        public void ShowCanvas() => _thisCanvas.enabled = true;
-        public void HideCanvas() => _thisCanvas.enabled = false;
+        protected override void UnsubscribeFromEvents() => _unsubscribeFromEvents();
     }
 }

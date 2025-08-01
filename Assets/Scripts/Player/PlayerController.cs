@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -43,6 +42,7 @@ namespace Player {
 
         // Some event to throw
         public static event Action Defeated;
+        public static event Action PauseButtonPressed;
 
         private void OnEnable() {
             if (_setOriginalHeightLaterCoroutine != null) StartCoroutine(SetOriginalHeightLater());
@@ -204,7 +204,7 @@ namespace Player {
 
         public void OnDown() => Crouch();
 
-        public void OnPause() => UIManager.ShowPauseMenu();
+        public void OnPause() => PauseButtonPressed?.Invoke();
 
         #endregion
 
