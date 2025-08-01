@@ -7,6 +7,8 @@ using UnityEngine.InputSystem;
 namespace Player {
     [RequireComponent(typeof(PlayerInput))]
     public class PlayerController : MonoBehaviour {
+        [SerializeField] private Animator _animator;
+        [SerializeField] private float _crossFade;
         [SerializeField] private int _maxHealth;
         [SerializeField] private float _iFramesDuration;
         private bool _inIFrames;
@@ -25,7 +27,7 @@ namespace Player {
         // Original value to revert to after jump or crouch
         private float _originalHeight;
         // Float error
-        private const float CalcError = 0.001f;
+        private const float CalcError = 0.05f;
         [Header("Movement and Jump")]
         [SerializeField] private float _moveSpeed;
         [SerializeField] private float _jumpDuration;
@@ -36,6 +38,7 @@ namespace Player {
         [SerializeField] private float _scaleSpeed;
         [SerializeField] private Vector3 _crouchScale;
         private bool _canCrouch = true;
+
         // Some event to throw
         public static event Action Damaged;
         public static event Action Defeated;
@@ -61,13 +64,14 @@ namespace Player {
 
             if (distanceToTarget > CalcError) {
                 _isMoving = true;
-                transform.position =
-                    Vector3.Lerp(transform.position, _targetPosition, _moveSpeed * Time.deltaTime);
+                transform.position = Vector3.Lerp(transform.position, _targetPosition,
+                    _moveSpeed * Time.deltaTime);
             }
             else if (_isMoving) {
                 // Snap when close enough
                 _isMoving = false;
                 transform.position = _targetPosition;
+                _animator.CrossFade("Normal", _crossFade);
             }
 
             // Scale
@@ -120,6 +124,7 @@ namespace Player {
             if (_isJumpingOrCrouching || !_canJump) return;
             
             Jumped?.Invoke();
+            _animator.CrossFade("Tilt Up", _crossFade);
             SetDesiredHeight(_originalHeight + _jumpElevation);
             _isJumpingOrCrouching = true;
             _canJump = false;
@@ -140,6 +145,7 @@ namespace Player {
             if (_isJumpingOrCrouching || !_canCrouch) return;
             
             Crouched?.Invoke();
+            _animator.CrossFade("Tilt Down", _crossFade);
             SetDesiredHeight(_crouchScale.y / 2);
             SetDesiredScale(_crouchScale);
             _isJumpingOrCrouching = true;
@@ -178,6 +184,7 @@ namespace Player {
                     return;
             }
             LineChanged?.Invoke();
+            _animator.CrossFade("Tilt Left", _crossFade);
         }
 
         public void OnRight() {
@@ -195,6 +202,7 @@ namespace Player {
                     break;
             }
             LineChanged?.Invoke();
+            _animator.CrossFade("Tilt Right", _crossFade);
         }
 
         public void OnUp() => Jump();
