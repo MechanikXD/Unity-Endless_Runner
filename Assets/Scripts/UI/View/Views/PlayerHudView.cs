@@ -1,7 +1,7 @@
 ﻿using TMPro;
 using UnityEngine;
 
-namespace UI.Views {
+namespace UI.View.Views {
     public class PlayerHudView : MonoBehaviour {
         [SerializeField] private TMP_Text _currentScoreText;
 

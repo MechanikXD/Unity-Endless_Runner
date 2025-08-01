@@ -10,12 +10,6 @@ namespace Obstacles.Obstacles {
 
         public override bool CanSpawnCollectible => _canHaveCollectible;
 
-        public override ObstacleBase InstantiateNew(Vector3 pos, Transform parent) {
-            var newObstacle = Instantiate(this, pos, Quaternion.identity);
-            newObstacle.transform.SetParent(parent, false);
-            return newObstacle;
-        }
-
         public override CollectibleBase SpawnCollectible(Transform parent) {
             if (_canHaveCollectible) {
                 return _collectiblePool[Random.Range(0, _collectiblePool.Length)]
@@ -24,11 +18,9 @@ namespace Obstacles.Obstacles {
             else return null;
         }
 
-        protected override void OnTriggerEnter(Collider other) {
-            if (other.TryGetComponent<PlayerController>(out var player)) {
-                player.TakeDamage();
-                Destroy(gameObject);
-            }
+        protected override void OnPlayerCollision(PlayerController player) {
+            player.TakeDamage();
+            Destroy(gameObject);
         }
     }
 }

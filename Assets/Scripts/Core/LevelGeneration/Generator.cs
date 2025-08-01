@@ -14,23 +14,31 @@ namespace Core.LevelGeneration {
         [SerializeField] private Vector3 _platformNotVisiblePosition;
         [SerializeField] private float _moveSpeed;
         
-        private void Awake() {
-            _platformParent = new GameObject("Level").transform;
-            _lastPlatformPosition = _levelOrigin.position;
-            
-            _platformPool = new Queue<Platform>(_platformCount);
-            for (var _ = 0; _ < _platformCount; _++) {
-                var platformPosition = NextPlatformPosition();
-                _platformPool.Enqueue(_platformPrefab.InstantiateNew(platformPosition, _platformParent));
-                _lastPlatformPosition = platformPosition;
-            }
-        }
+        private void Awake() => Initialize();
+        
+        private void Update() => MovePlatforms();
 
-        private void Update() {
+        private void MovePlatforms() {
             _platformParentPosition.x += _moveSpeed * Time.deltaTime;
             _platformParent.position = _platformParentPosition;
 
             if (OutsidePlayerVisibility(_platformPool.Peek())) RepositionLastPlatform();
+        }
+
+        private void Initialize() {
+            _platformParent = new GameObject("Level").transform;
+            _lastPlatformPosition = _levelOrigin.position;
+            _platformParentPosition = _platformParent.position;
+            
+            _platformPool = new Queue<Platform>(_platformCount);
+            for (var _ = 0; _ < _platformCount; _++) {
+                var platformPosition = NextPlatformPosition();
+                var newPlatform = Instantiate(_platformPrefab, platformPosition,
+                    Quaternion.identity, _platformParent);
+                
+                _platformPool.Enqueue(newPlatform);
+                _lastPlatformPosition = platformPosition;
+            }
         }
 
         private Vector3 NextPlatformPosition() {

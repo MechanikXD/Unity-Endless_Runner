@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using Core.Score;
+using Player;
+using UnityEngine;
 
 namespace Obstacles.Collectible.Collectibles {
     public class SimpleCollectible : CollectibleBase {
@@ -6,6 +8,11 @@ namespace Obstacles.Collectible.Collectibles {
             var collectible = Instantiate(this, position, Quaternion.identity);
             collectible.transform.SetParent(parent, false);
             return collectible;
+        }
+
+        protected override void OnPlayerCollision(PlayerController player) {
+            ScoreManager.AddScore(_scoreGiven);
+            Destroy(gameObject);
         }
     }
 }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -30,26 +29,45 @@ namespace Player {
         private const float CalcError = 0.05f;
         [Header("Movement and Jump")]
         [SerializeField] private float _moveSpeed;
-        [SerializeField] private float _jumpDuration;
         [SerializeField] private float _jumpElevation;
+        [SerializeField] private float _crouchOrJumpDuration = 0.75f;
         private bool _canJump = true;
         [Header("Crouch")]
-        [SerializeField] private float _crouchDuration;
         [SerializeField] private float _scaleSpeed;
         [SerializeField] private Vector3 _crouchScale;
         private bool _canCrouch = true;
 
+        private Coroutine _setOriginalHeightLaterCoroutine;
+        private Coroutine _removeIFramesLaterCoroutine;
+
         // Some event to throw
-        public static event Action Damaged;
         public static event Action Defeated;
-        public static event Action LineChanged;
-        public static event Action Jumped;
-        public static event Action Crouched;
-        public static event Action BecomeGrounded;
+        public static event Action PauseButtonPressed;
+
+        private void OnEnable() => StartPreviousCoroutines();
+
+        private void OnDisable() => StopExistingCoroutines();
+
+        private void StopExistingCoroutines() {
+            if (_setOriginalHeightLaterCoroutine != null) StopCoroutine(SetOriginalHeightLater());
+            if (_removeIFramesLaterCoroutine != null) StartCoroutine(RemoveIFramesLater());
+        }
+        
+        private void StartPreviousCoroutines() {
+            if (_setOriginalHeightLaterCoroutine != null) StartCoroutine(SetOriginalHeightLater());
+            if (_removeIFramesLaterCoroutine != null) StartCoroutine(RemoveIFramesLater());
+        }
 
         #region Movement
         
-        private void Awake() {
+        private void Awake() => SetInitialPlayerPosition();
+
+        private void Update() {
+            HandleMovement();
+            HandleScale();
+        }
+        
+        private void SetInitialPlayerPosition() {
             // Start at middle platform.
             var middle = _middlePosition.localPosition;
             SetDesiredHeight(middle.y, true);
@@ -58,8 +76,22 @@ namespace Player {
             _currentHealth = _maxHealth;
         }
 
-        private void Update() {
-            // Movement
+        private void HandleScale() {
+            var scaleDifference = Vector3.Distance(transform.position, _targetPosition);
+
+            if (scaleDifference > CalcError) {
+                _isScaling = true;
+                transform.localScale =
+                    Vector3.Lerp(transform.localScale, _targetScale, _scaleSpeed * Time.deltaTime);
+            }
+            else if (_isScaling) {
+                // Snap when close enough
+                _isScaling = false;
+                transform.localScale = _targetScale;
+            }
+        }
+
+        private void HandleMovement() {
             var distanceToTarget = Vector3.Distance(transform.position, _targetPosition);
 
             if (distanceToTarget > CalcError) {
@@ -72,20 +104,6 @@ namespace Player {
                 _isMoving = false;
                 transform.position = _targetPosition;
                 _animator.CrossFade("Normal", _crossFade);
-            }
-
-            // Scale
-            var scaleDifference = Vector3.Distance(transform.position, _targetPosition);
-
-            if (scaleDifference > CalcError) {
-                _isScaling = true;
-                transform.localScale =
-                    Vector3.Lerp(transform.localScale, _targetScale, _scaleSpeed * Time.deltaTime);
-            }
-            else if (_isScaling) {
-                // Snap when close enough
-                _isScaling = false;
-                transform.localScale = _targetScale;
             }
         }
 
@@ -123,44 +141,34 @@ namespace Player {
         private void Jump() {
             if (_isJumpingOrCrouching || !_canJump) return;
             
-            Jumped?.Invoke();
             _animator.CrossFade("Tilt Up", _crossFade);
             SetDesiredHeight(_originalHeight + _jumpElevation);
             _isJumpingOrCrouching = true;
             _canJump = false;
-            
-            IEnumerator SetOriginalHeightLater() {
-                yield return new WaitForSeconds(_jumpDuration);
-                SetDesiredHeight(_originalHeight);
-                _isJumpingOrCrouching = false;
-                yield return new WaitUntil(AtOriginalHeight);
-                _canJump = true;
-                BecomeGrounded?.Invoke();
-            }
 
-            StartCoroutine(SetOriginalHeightLater());
+            _setOriginalHeightLaterCoroutine = StartCoroutine(SetOriginalHeightLater());
         }
 
         private void Crouch() {
             if (_isJumpingOrCrouching || !_canCrouch) return;
             
-            Crouched?.Invoke();
             _animator.CrossFade("Tilt Down", _crossFade);
             SetDesiredHeight(_crouchScale.y / 2);
             SetDesiredScale(_crouchScale);
             _isJumpingOrCrouching = true;
             _canCrouch = false;
-            
-            IEnumerator SetOriginalHeightLater() {
-                yield return new WaitForSeconds(_crouchDuration);
-                SetDesiredHeight(_originalHeight);
-                SetDesiredScale(Vector3.one);   // None: scale must be vector.one by default (like it should be)
-                _isJumpingOrCrouching = false;
-                yield return new WaitUntil(AtOriginalHeight);
-                _canCrouch = true;
-            }
 
-            StartCoroutine(SetOriginalHeightLater());
+            _setOriginalHeightLaterCoroutine = StartCoroutine(SetOriginalHeightLater());
+        }
+        
+        private IEnumerator SetOriginalHeightLater() {
+            yield return new WaitForSeconds(_crouchOrJumpDuration);
+            SetDesiredHeight(_originalHeight);
+            SetDesiredScale(Vector3.one);   // Note: scale must be vector.one by default
+            _isJumpingOrCrouching = false;
+            yield return new WaitUntil(AtOriginalHeight);
+            _canCrouch = true;
+            _setOriginalHeightLaterCoroutine = null;
         }
 
         private bool AtOriginalHeight() => Math.Abs(transform.position.y - _originalHeight) < 0.01f;
@@ -183,7 +191,6 @@ namespace Player {
                     // Already there
                     return;
             }
-            LineChanged?.Invoke();
             _animator.CrossFade("Tilt Left", _crossFade);
         }
 
@@ -201,7 +208,6 @@ namespace Player {
                     _lastPlatformPositions = 0;
                     break;
             }
-            LineChanged?.Invoke();
             _animator.CrossFade("Tilt Right", _crossFade);
         }
 
@@ -209,7 +215,7 @@ namespace Player {
 
         public void OnDown() => Crouch();
 
-        public void OnPause() => UIManager.ShowPauseMenu();
+        public void OnPause() => PauseButtonPressed?.Invoke();
 
         #endregion
 
@@ -222,16 +228,16 @@ namespace Player {
                 Defeated?.Invoke();
             }
             else {
-                Damaged?.Invoke();
                 _inIFrames = true;
 
-                IEnumerator RemoveIFramesLater() {
-                    yield return new WaitForSeconds(_iFramesDuration);
-                    _inIFrames = false;
-                }
-
-                StartCoroutine(RemoveIFramesLater());
+                _removeIFramesLaterCoroutine = StartCoroutine(RemoveIFramesLater());
             }
+        }
+        
+        private IEnumerator RemoveIFramesLater() {
+            yield return new WaitForSeconds(_iFramesDuration);
+            _inIFrames = false;
+            _removeIFramesLaterCoroutine = null;
         }
     }
 }
