@@ -19,7 +19,11 @@ namespace UI {
 
         private void Start() => HideAllCanvases();
 
-        private void OnEnable() {
+        private void OnEnable() => SubscribeToEvents();
+
+        private void OnDisable() => UnsubscribeFromEvents();
+        
+        private void SubscribeToEvents() {
             _pauseMenu.ResumePressed += HidePauseMenu;
             _pauseMenu.RestartPressed += RestartScene;
             _pauseMenu.ExitPressed += ExitApp;
@@ -36,7 +40,7 @@ namespace UI {
             PlayerController.PauseButtonPressed += ShowPauseMenu;
         }
 
-        private void OnDisable() {
+        private void UnsubscribeFromEvents() {
             _pauseMenu.ResumePressed -= HidePauseMenu;
             _pauseMenu.RestartPressed -= RestartScene;
             _pauseMenu.ExitPressed -= ExitApp;
@@ -52,7 +56,7 @@ namespace UI {
             
             PlayerController.PauseButtonPressed -= ShowPauseMenu;
         }
-        
+
         private void HideAllCanvases() {
             OnHideCanvas();
             _pauseMenu.HideCanvas();

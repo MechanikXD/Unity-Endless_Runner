@@ -14,7 +14,18 @@ namespace Core.LevelGeneration {
         [SerializeField] private Vector3 _platformNotVisiblePosition;
         [SerializeField] private float _moveSpeed;
         
-        private void Awake() {
+        private void Awake() => Initialize();
+        
+        private void Update() => MovePlatforms();
+
+        private void MovePlatforms() {
+            _platformParentPosition.x += _moveSpeed * Time.deltaTime;
+            _platformParent.position = _platformParentPosition;
+
+            if (OutsidePlayerVisibility(_platformPool.Peek())) RepositionLastPlatform();
+        }
+
+        private void Initialize() {
             _platformParent = new GameObject("Level").transform;
             _lastPlatformPosition = _levelOrigin.position;
             _platformParentPosition = _platformParent.position;
@@ -28,13 +39,6 @@ namespace Core.LevelGeneration {
                 _platformPool.Enqueue(newPlatform);
                 _lastPlatformPosition = platformPosition;
             }
-        }
-
-        private void Update() {
-            _platformParentPosition.x += _moveSpeed * Time.deltaTime;
-            _platformParent.position = _platformParentPosition;
-
-            if (OutsidePlayerVisibility(_platformPool.Peek())) RepositionLastPlatform();
         }
 
         private Vector3 NextPlatformPosition() {

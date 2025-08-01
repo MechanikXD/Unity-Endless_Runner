@@ -18,11 +18,9 @@ namespace Obstacles.Obstacles {
             else return null;
         }
 
-        protected override void OnTriggerEnter(Collider other) {
-            if (other.TryGetComponent<PlayerController>(out var player)) {
-                player.TakeDamage();
-                Destroy(gameObject);
-            }
+        protected override void OnPlayerCollision(PlayerController player) {
+            player.TakeDamage();
+            Destroy(gameObject);
         }
     }
 }

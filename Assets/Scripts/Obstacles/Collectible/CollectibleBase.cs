@@ -1,5 +1,4 @@
-﻿using Core.Score;
-using Player;
+﻿using Player;
 using UnityEngine;
 
 namespace Obstacles.Collectible {
@@ -8,11 +7,10 @@ namespace Obstacles.Collectible {
 
         public abstract CollectibleBase InstantiateNew(Vector3 position, Transform parent);
 
+        protected abstract void OnPlayerCollision(PlayerController player);
+
         protected void OnTriggerEnter(Collider other) {
-            if (other.TryGetComponent<PlayerController>(out _)) {
-                ScoreManager.AddScore(_scoreGiven);
-                Destroy(gameObject);
-            }
+            if (other.TryGetComponent<PlayerController>(out var player)) OnPlayerCollision(player);
         }
     }
 }

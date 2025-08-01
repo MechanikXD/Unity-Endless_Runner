@@ -44,19 +44,30 @@ namespace Player {
         public static event Action Defeated;
         public static event Action PauseButtonPressed;
 
-        private void OnEnable() {
-            if (_setOriginalHeightLaterCoroutine != null) StartCoroutine(SetOriginalHeightLater());
+        private void OnEnable() => StartPreviousCoroutines();
+
+        private void OnDisable() => StopExistingCoroutines();
+
+        private void StopExistingCoroutines() {
+            if (_setOriginalHeightLaterCoroutine != null) StopCoroutine(SetOriginalHeightLater());
             if (_removeIFramesLaterCoroutine != null) StartCoroutine(RemoveIFramesLater());
         }
-
-        private void OnDisable() {
-            if (_setOriginalHeightLaterCoroutine != null) StopCoroutine(SetOriginalHeightLater());
+        
+        private void StartPreviousCoroutines() {
+            if (_setOriginalHeightLaterCoroutine != null) StartCoroutine(SetOriginalHeightLater());
             if (_removeIFramesLaterCoroutine != null) StartCoroutine(RemoveIFramesLater());
         }
 
         #region Movement
         
-        private void Awake() {
+        private void Awake() => SetInitialPlayerPosition();
+
+        private void Update() {
+            HandleMovement();
+            HandleScale();
+        }
+        
+        private void SetInitialPlayerPosition() {
             // Start at middle platform.
             var middle = _middlePosition.localPosition;
             SetDesiredHeight(middle.y, true);
@@ -65,8 +76,22 @@ namespace Player {
             _currentHealth = _maxHealth;
         }
 
-        private void Update() {
-            // Movement
+        private void HandleScale() {
+            var scaleDifference = Vector3.Distance(transform.position, _targetPosition);
+
+            if (scaleDifference > CalcError) {
+                _isScaling = true;
+                transform.localScale =
+                    Vector3.Lerp(transform.localScale, _targetScale, _scaleSpeed * Time.deltaTime);
+            }
+            else if (_isScaling) {
+                // Snap when close enough
+                _isScaling = false;
+                transform.localScale = _targetScale;
+            }
+        }
+
+        private void HandleMovement() {
             var distanceToTarget = Vector3.Distance(transform.position, _targetPosition);
 
             if (distanceToTarget > CalcError) {
@@ -79,20 +104,6 @@ namespace Player {
                 _isMoving = false;
                 transform.position = _targetPosition;
                 _animator.CrossFade("Normal", _crossFade);
-            }
-
-            // Scale
-            var scaleDifference = Vector3.Distance(transform.position, _targetPosition);
-
-            if (scaleDifference > CalcError) {
-                _isScaling = true;
-                transform.localScale =
-                    Vector3.Lerp(transform.localScale, _targetScale, _scaleSpeed * Time.deltaTime);
-            }
-            else if (_isScaling) {
-                // Snap when close enough
-                _isScaling = false;
-                transform.localScale = _targetScale;
             }
         }
 

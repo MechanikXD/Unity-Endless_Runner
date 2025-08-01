@@ -1,14 +1,13 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace UI.View {
     public abstract class ViewBase : MonoBehaviour {
-        protected Canvas ThisCanvas;
+        private Canvas _thisCanvas;
         
-        public bool IsEnabled => ThisCanvas.enabled;
+        public bool IsEnabled => _thisCanvas.enabled;
 
         protected void Awake() {
-            ThisCanvas = GetComponent<Canvas>();
+            _thisCanvas = GetComponent<Canvas>();
         }
 
         protected void OnEnable() => SubscribeToEvents();
@@ -17,7 +16,7 @@ namespace UI.View {
         protected abstract void SubscribeToEvents();
         protected abstract void UnsubscribeFromEvents();
         
-        public void ShowCanvas() => ThisCanvas.enabled = true;
-        public void HideCanvas() => ThisCanvas.enabled = false;
+        public void ShowCanvas() => _thisCanvas.enabled = true;
+        public void HideCanvas() => _thisCanvas.enabled = false;
     }
 }
