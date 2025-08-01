@@ -1,9 +1,17 @@
+using Obstacles.Collectible;
+using Player;
 using UnityEngine;
 
 namespace Obstacles {
-    [RequireComponent(typeof(Rigidbody))]
     public abstract class ObstacleBase : MonoBehaviour {
-        public abstract ObstacleBase InstantiateNew(Vector3 pos, Transform parent);
-        protected abstract void OnTriggerEnter(Collider other);
+        public abstract bool CanSpawnCollectible { get; }
+
+        public virtual CollectibleBase SpawnCollectible(Transform parent) => null;
+
+        private void OnTriggerEnter(Collider other) {
+            if (other.TryGetComponent<PlayerController>(out var player)) OnPlayerCollision(player);
+        }
+
+        protected abstract void OnPlayerCollision(PlayerController player);
     }
 }

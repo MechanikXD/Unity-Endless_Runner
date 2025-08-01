@@ -1,34 +1,29 @@
-﻿using System.Linq;
-using Player;
-using UI.Views;
-#if UNITY_EDITOR
+﻿#if UNITY_EDITOR
 using UnityEditor;
 #endif
+using Core.Score;
+using Player;
+using UI.View.Views;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace UI {
-    public class UIManager : MonoBehaviour { 
-        private static PauseMenuView _pauseMenu;
-        private static GameOverView _gameOver;
-        private static SettingsView _settingsView;
+    public class UIManager : MonoBehaviour {
+        [SerializeField] private PlayerHudView _playerHud;
+        
+        [SerializeField] private PauseMenuView _pauseMenu;
+        [SerializeField] private GameOverView _gameOver;
+        [SerializeField] private SettingsView _settingsView;
 
-        private void Awake() {
-            var sceneCanvases = GameObject.FindGameObjectsWithTag("Canvas");
-            _ = sceneCanvases.First(canvas => canvas.TryGetComponent(out _pauseMenu));
-            _ = sceneCanvases.First(canvas => canvas.TryGetComponent(out _gameOver));
-            _ = sceneCanvases.First(canvas => canvas.TryGetComponent(out _settingsView));
-            
-            OnHideCanvas();
-        }
+        private void Awake() => Initialize();
 
-        private void Start() {
-            _pauseMenu.HideCanvas();
-            _gameOver.HideCanvas();
-            _settingsView.HideCanvas();
-        }
+        private void Start() => HideAllCanvases();
 
-        private void OnEnable() {
+        private void OnEnable() => SubscribeToEvents();
+
+        private void OnDisable() => UnsubscribeFromEvents();
+        
+        private void SubscribeToEvents() {
             _pauseMenu.ResumePressed += HidePauseMenu;
             _pauseMenu.RestartPressed += RestartScene;
             _pauseMenu.ExitPressed += ExitApp;
@@ -39,9 +34,13 @@ namespace UI {
             PlayerController.Defeated += ShowGameOver;
 
             _settingsView.BackFromSettings += ReturnFromSettings;
+
+            ScoreManager.ScoreChanged += ChangeScoreInHud;
+
+            PlayerController.PauseButtonPressed += ShowPauseMenu;
         }
 
-        private void OnDisable() {
+        private void UnsubscribeFromEvents() {
             _pauseMenu.ResumePressed -= HidePauseMenu;
             _pauseMenu.RestartPressed -= RestartScene;
             _pauseMenu.ExitPressed -= ExitApp;
@@ -49,9 +48,28 @@ namespace UI {
             
             _gameOver.RestartPressed -= RestartScene;
             _gameOver.ExitPressed -= ExitApp;
+            PlayerController.Defeated -= ShowGameOver;
             
             _settingsView.BackFromSettings -= ReturnFromSettings;
+            
+            ScoreManager.ScoreChanged -= ChangeScoreInHud;
+            
+            PlayerController.PauseButtonPressed -= ShowPauseMenu;
         }
+
+        private void HideAllCanvases() {
+            OnHideCanvas();
+            _pauseMenu.HideCanvas();
+            _gameOver.HideCanvas();
+            _settingsView.HideCanvas();
+        }
+
+        private void Initialize() {
+            ScoreManager.Initialize();
+            _playerHud.SetNewScore(0);
+        }
+
+        private void ChangeScoreInHud(int newValue) => _playerHud.SetNewScore(newValue);
 
         private static void OnShowCanvas() {
             Time.timeScale = 0f;
@@ -65,33 +83,35 @@ namespace UI {
             Cursor.lockState = CursorLockMode.Locked;
         }
 
-        public static void ShowPauseMenu() {
+        private void ShowPauseMenu() {
             if (_gameOver.IsEnabled) return;
             
             OnShowCanvas();
             _pauseMenu.ShowCanvas();
         }
 
-        private static void HidePauseMenu() {
+        private void HidePauseMenu() {
             if (_gameOver.IsEnabled) return;
             
             OnHideCanvas();
             _pauseMenu.HideCanvas();
         }
 
-        private static void ShowGameOver() {
-            // TODO: Display current and best scores
+        private void ShowGameOver() {
+            ScoreManager.UpdateBestScore();
+            _gameOver.SetScores(ScoreManager.CurrentScore, ScoreManager.BestScore);
             OnShowCanvas();
+            ScoreManager.SaveBestScore();
             _gameOver.ShowCanvas();
         }
 
-        private static void ShowSettings() {
+        private void ShowSettings() {
             // NOTE: Since only access to settings is from pause menu (for now) it's hardcoded to return to it.
             _pauseMenu.HideCanvas();
             _settingsView.ShowCanvas();
         }
 
-        private static void ReturnFromSettings() {
+        private void ReturnFromSettings() {
             // NOTE: Since only access to settings is from pause menu (for now) it's hardcoded to return to it.
             _settingsView.HideCanvas();
             _pauseMenu.ShowCanvas();
@@ -106,8 +126,6 @@ namespace UI {
 #endif
         }
 
-        private void RestartScene() {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-        }
+        private void RestartScene() => SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }
